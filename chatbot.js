@@ -1,5 +1,6 @@
 const pseud = []
-var weather = require('weather-js');
+const readline = require('readline')
+const weather = require('weather-js')
 var geoip = require('geoip-lite');
 const { networkInterfaces } = require('os');
 const nets = networkInterfaces();
@@ -15,53 +16,16 @@ for (const name of Object.keys(nets)) {
         }
     }
 }
-
-const readline = require('readline');
-const rl = readline.createInterface({
-    input: process.stdin,
-    output: process.stdout
-});
-
-console.log(`Bonjour ! Quel est votre pseudo ?`)
-function pseudo() {
-    rl.question('Pseudo : \n', (answer) => {
-        pseud.push(answer)
-        data[5].answers.push(`Ton nom est ${pseud[0]}`)
-        console.log(`Votre pseudo est ${pseud[0]}`);
-        ask()
-    });
-}
-pseudo()
-
-function ask() {
-    rl.question('Message : ', (answer) => {
-        console.log(processString(answer));
-        ask()
-    });
-}
-ask()
-
 const data = [
     {
-        name: 'whatisweathe',
+        name: 'temps',
         answertype: 'normal',
-        words: ['temps', 'quel', 'fait', 'il', 'à', 'a', 'de', 'dans'],
+        words: ['quelle', 'quel', 'temps', 'fait', 'il', 'fait-il', 'a', 'à'],
         important: ['temps'],
-        answers: [`{0}`],
+        answers: ['il fait {0}°C à {1} aujourd\'hui à {2}'],
         after: [],
         getinfoafter: [' à ', ' a ', ' de ', ' dans '],
-        function: weathe,
-        minimalmatch: 5,
-        minimalpercent: 0
-    },
-    {
-        name: 'whatisweather',
-        answertype: 'normal',
-        words: ['temps', 'quel', 'fait', 'fait-il', 'il'],
-        important: ['temps'],
-        answers: [],
-        after: [],
-        getinfoafter: [],
+        function: getWeather,
         minimalmatch: 3,
         minimalpercent: 0
     },
@@ -141,14 +105,20 @@ const data = [
         getinfoafter: [],
         minimalmatch: 3,
         minimalpercent: 80
+    },
+    {
+        name: 'dev',
+        answertype: 'normal',
+        words: ['en','qui', 'quel', 'comment', 'quelle', "t'as", 'langage', 'language', 'code', 'programmation', 'fait', 'été', 'codé', 'dev'],
+        important: [],
+        answers: ["J'ai été développé en javscript par Semanteo avec l'aide de Shawiiz_z"],
+        after: [],
+        getinfoafter: [],
+        minimalmatch: 3,
+        minimalpercent: 0
     }
 ]
-
-function getHour() {
-    return new Date().getHours() + "h" + new Date().getMinutes()
-}
-
-function getWeather() {
+/*function getWeather() {
     const ip = results.Ethernet[0];
     const geo = geoip.lookup(ip);
     return new Promise((resolve, reject) => {
@@ -157,29 +127,27 @@ function getWeather() {
         return resolve(`Météo pour : ${res[0].location.name} le ${res[0].current.date} \nHeure d'observation : ${res[0].current.observationtime}`); 
       });   
     });
-  }
+  }*/
 
-async function weathe(ville) {
-    const es = await getWeath(ville)
-    return es;
-}
-  function getWeath(ville) {
-    return new Promise((resolve, reject) => {
-      weather.find({ search: ville, degreeType: 'C' }, function(err, res) {
-        if (err) return reject(err);
-        return resolve(`Météo pour : ${res[0].location.name} le ${res[0].current.date} \nHeure d'observation : ${res[0].current.observationtime}`); 
-      });   
+  function getWeather(ville) {
+    return new Promise(async (resolve) => {
+        weather.find({ search: ville, degreeType: 'C' }, (err, res) => {
+            if (err) resolve(['inconnu', 'inconnu', 'inconnu'])
+            try {
+                resolve([res[0].current.temperature, res[0].location.name, res[0].current.observationtime])
+            } catch (e) {
+            resolve(['inconnu', 'inconnu', 'inconnu'])
+            }
+        })
     });
-  }
-  const res = getWeather().then(x => data[1].answers.push(`${x}`))
-  res;
+}
 
 
 function getHour() {
     return new Date().getHours() + "h" + new Date().getMinutes()
 }
 
-function processString(message) {
+async function processString(message) {
     let builtSentence = []
     let outSentence = ''
 
@@ -189,7 +157,7 @@ function processString(message) {
         for (const req of data) {
             const match = numberOfWordMatch(words, req.words)
             if (message.length <= 3 && req.minimalmatch >= 3) req.minimalmatch--
-            if (match < req.minimalmatch || (match < req.minimalmatch && req.minimalpercent > 0 && (message.split(' ').length/100*match) < req.minimalpercent) || (req.important.length > 0 && numberOfWordMatch(words, req.important) < 1)) continue
+            if (match < req.minimalmatch || (match < req.minimalmatch && req.minimalpercent > 0 && (message.split(' ').length / 100 * match) < req.minimalpercent) || (req.important.length > 0 && numberOfWordMatch(words, req.important) < 1)) continue
 
             builtSentence.push(req)
         }
@@ -218,8 +186,8 @@ function processString(message) {
             if (data.getinfoafter.length > 0 && resultsData.length > 0) {
                 for (const result of resultsData) {
                     const parsedData = message.split(result)[1].split(" ")[0]
-                    const answer = data.function(parsedData)
-                    rndm = ran(data.answers).format(answer, parsedData)
+                    const answer = await data.function(parsedData)
+                    rndm = ran(data.answers).format(...answer)
                 }
             }
 
@@ -267,3 +235,27 @@ function removeShit(s) {
     b += s.slice(-1)
     return b
 }
+
+const rl = readline.createInterface({
+    input: process.stdin,
+    output: process.stdout
+});
+
+console.log(`Bonjour ! Quel est votre pseudo ?`)
+function pseudo() {
+    rl.question('Pseudo : \n', (answer) => {
+        pseud.push(answer)
+        data[5].answers.push(`Ton nom est ${pseud[0]}`)
+        console.log(`Votre pseudo est ${pseud[0]}`);
+        ask()
+    });
+}
+pseudo()
+
+function ask() {
+    rl.question('Message : ', async (answer) => {
+        console.log((await processString(answer)));
+        ask()
+    });
+}
+ask()
