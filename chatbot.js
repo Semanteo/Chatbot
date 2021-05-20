@@ -4,10 +4,9 @@ const weather = require('weather-js')
 var geoip = require('geoip-lite');
 const { networkInterfaces } = require('os');
 const nets = networkInterfaces();
-const results = Object.create(null); // Or just '{}', an empty object
+const results = Object.create(null);
 for (const name of Object.keys(nets)) {
     for (const net of nets[name]) {
-        // Skip over non-IPv4 and internal (i.e. 127.0.0.1) addresses
         if (net.family === 'IPv6' && !net.internal && net.netmask === 'ffff:ffff:ffff:ffff:ffff:ffff:ffff:ffff' && net.address != '::1') {
             if (!results[name]) {
                 results[name] = [];
@@ -118,30 +117,33 @@ const data = [
         minimalpercent: 0
     }
 ]
-/*function getWeather() {
-    const ip = results.Ethernet[0];
-    const geo = geoip.lookup(ip);
-    return new Promise((resolve, reject) => {
-      weather.find({ search: geo.city, degreeType: 'C' }, function(err, res) {
-        if (err) return reject(err);
-        return resolve(`Météo pour : ${res[0].location.name} le ${res[0].current.date} \nHeure d'observation : ${res[0].current.observationtime}`); 
-      });   
-    });
-  }*/
 
   function getWeather(ville) {
-    return new Promise(async (resolve) => {
-        weather.find({ search: ville, degreeType: 'C' }, (err, res) => {
-            if (err) resolve(['inconnu', 'inconnu', 'inconnu'])
-            try {
-                resolve([res[0].current.temperature, res[0].location.name, res[0].current.observationtime])
-            } catch (e) {
-            resolve(['inconnu', 'inconnu', 'inconnu'])
-            }
-        })
-    });
+    if (ville === null) {
+        const ip = results.Ethernet[0];
+        const geo = geoip.lookup(ip);
+        return new Promise(async (resolve) => {
+            weather.find({ search: geo.city, degreeType: 'C' }, function(err, res) {
+                if (err) resolve(['inconnu', 'inconnu', 'inconnu'])
+                try {
+                    resolve([res[0].current.temperature, res[0].location.name, res[0].current.observationtime])
+                } catch (e) {
+                    resolve(['inconnu', 'inconnu', 'inconnu'])
+                }
+            })
+        });
+    } else
+        return new Promise(async (resolve) => {
+            weather.find({ search: ville, degreeType: 'C' }, (err, res) => {
+                if (err) resolve(['inconnu', 'inconnu', 'inconnu'])
+                try {
+                    resolve([res[0].current.temperature, res[0].location.name, res[0].current.observationtime])
+                } catch (e) {
+                    resolve(['inconnu', 'inconnu', 'inconnu'])
+                }
+            })
+        });
 }
-
 
 function getHour() {
     return new Date().getHours() + "h" + new Date().getMinutes()
@@ -183,12 +185,13 @@ async function processString(message) {
 
             const resultsData = stringContainsList(message, data.getinfoafter)
 
-            if (data.getinfoafter.length > 0 && resultsData.length > 0) {
-                for (const result of resultsData) {
-                    const parsedData = message.split(result)[1].split(" ")[0]
-                    const answer = await data.function(parsedData)
-                    rndm = ran(data.answers).format(...answer)
-                }
+            if (data.getinfoafter.length > 0) {
+                let parsedData = null
+                if (resultsData.length > 0)
+                    for (const result of resultsData)
+                        parsedData = message.split(result)[1].split(" ")[0]
+                const answer = await data.function(parsedData)
+                rndm = ran(data.answers).format(...answer)
             }
 
             outSentence += (up ? rndm.charAt(0).toUpperCase() + rndm.slice(1) : rndm) + add
@@ -223,6 +226,9 @@ function ran(list) {
 
 function numberOfWordMatch(words, dataword) {
     let numberMatch = 0
+    words = words.filter(function (item, pos) {
+        return words.indexOf(item) == pos;
+    })
     for (const word of words)
         if (dataword.includes(word))
             numberMatch++
