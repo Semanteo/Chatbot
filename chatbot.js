@@ -45,13 +45,13 @@ const data = [
     {
         name: 'whatisweathe',
         answertype: 'normal',
-        words: ['temps', 'quel', 'fait', 'fait-il', 'il'],
-        important: ['temps'],
-        answers: ['Il fait {0} à {1}'],
+        words: ['temps', 'quel', 'fait', 'fait-il', 'il', ' à '],
+        important: ['temps', 'à'],
+        answers: [''],
         after: [],
         getinfoafter: [' à ', ' a ', ' de ', ' dans '],
-        function: weathe(),
-        minimalmatch: 3,
+        function: weathe,
+        minimalmatch: 4,
         minimalpercent: 0
     },
     {
@@ -159,8 +159,9 @@ function getWeather() {
     });
   }
 
-  async  function weathe(ville) {
-    return await getWeath(ville)
+async function weathe(ville) {
+    const es = await getWeath(ville)
+    return console.log(es);
 }
   function getWeath(ville) {
     return new Promise((resolve, reject) => {
@@ -172,10 +173,6 @@ function getWeather() {
   }
   const res = getWeather().then(x => data[1].answers.push(`${x}`))
   res;
- /* async function weather(ville){
-    const ret = await getWeath(ville)
-    console.log(ret)
-  };*/
 
 
 function getHour() {
