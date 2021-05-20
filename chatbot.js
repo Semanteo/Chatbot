@@ -43,14 +43,14 @@ ask()
 
 const data = [
     {
-        name: 'whatisweather',
+        name: 'whatisweathe',
         answertype: 'normal',
         words: ['temps', 'quel', 'fait', 'fait-il', 'il'],
         important: ['temps'],
-        answers: [],
+        answers: ['Il fait {0} à {1}'],
         after: [],
         getinfoafter: [' à ', ' a ', ' de ', ' dans '],
-        function: weather,
+        function: weathe(),
         minimalmatch: 3,
         minimalpercent: 0
     },
@@ -62,7 +62,6 @@ const data = [
         answers: [],
         after: [],
         getinfoafter: [],
-        function: getWeather,
         minimalmatch: 3,
         minimalpercent: 0
     },
@@ -80,7 +79,7 @@ const data = [
     {
         name: 'humeur',
         answertype: 'normal',
-        words: ['est', 'quelle', 'comment', 'ça', 'sa', 'ca', 'va', 'tu', 'vas', 'humeur', 'ton'],
+        words: ['est', 'quelle', 'comment', 'ça', 'ca', 'va', 'tu', 'vas', 'humeur', 'ton', 'vas-tu'],
         important: ['comment'],
         answers: ['Je vais bien', 'Ca va bien'],
         after: [],
@@ -102,7 +101,7 @@ const data = [
     {
         name: 'help',
         answertype: 'question',
-        words: ['ai', 'aide', 'besoin', 'veux', 'je', 'aide', 'peux', 'aide', 'cherche', "j'ai", "l'aide"],
+        words: ['ai', 'aide', 'besoin', 'veux', 'je', 'aide', 'peux', 'aide', 'cherche', "j'ai", "l'aide", "d'aide"],
         important: [],
         answers: ['En quoi puis-je vous aider'],
         after: [],
@@ -113,7 +112,7 @@ const data = [
     {
         name: 'whatismyname',
         answertype: 'normal',
-        words: ['est', 'quoi', 'quel', 'quelle', 'est', 'mon', 'ma', 'prénom', 'comment', 'je', 'appelle'],
+        words: ['est', 'quoi', 'quel', 'quelle', 'est', 'mon', 'ma', 'prénom', 'comment', 'je', 'appelle', "m'appelle"],
         important: ['nom', 'prenom', 'appelle'],
         answers: [],
         after: [],
@@ -155,29 +154,29 @@ function getWeather() {
     return new Promise((resolve, reject) => {
       weather.find({ search: geo.city, degreeType: 'C' }, function(err, res) {
         if (err) return reject(err);
-        return resolve(`Météo pour : ${res[0].location.name} le ${res[0].current.date} \nHeure d'observation : ${res[0].current.observatuintime}`); 
+        return resolve(`Météo pour : ${res[0].location.name} le ${res[0].current.date} \nHeure d'observation : ${res[0].current.observationtime}`); 
       });   
     });
   }
 
+  async  function weathe(ville) {
+    return await getWeath(ville)
+}
   function getWeath(ville) {
     return new Promise((resolve, reject) => {
       weather.find({ search: ville, degreeType: 'C' }, function(err, res) {
         if (err) return reject(err);
-        return resolve(`Météo pour : ${res[0].location.name} le ${res[0].current.date} \nHeure d'observation : ${res[0].current.observatuintime}`); 
+        return resolve(`Météo pour : ${res[0].location.name} le ${res[0].current.date} \nHeure d'observation : ${res[0].current.observationtime}`); 
       });   
     });
   }
   const res = getWeather().then(x => data[1].answers.push(`${x}`))
   res;
-  async function weather(ville){
+ /* async function weather(ville){
     const ret = await getWeath(ville)
     console.log(ret)
-  };
+  };*/
 
-  function weather(ville) {
-    return 'beau'
-}
 
 function getHour() {
     return new Date().getHours() + "h" + new Date().getMinutes()
